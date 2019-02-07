@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "rabbitmq.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "rabbitmq.name" . }}
+    helm.sh/chart: {{ include "rabbitmq.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+{{- if .Values.statefulset }}
+    - port: 4369
+      targetPort: epmd
+      protocol: TCP
+      name: epmd
+{{- end }}
+    - port: {{ .Values.amqpPort }}
+      targetPort: amqp
+      protocol: TCP
+      name: amqp
+    - port: {{ .Values.managerPort }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: {{ include "rabbitmq.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}

@@ -1,0 +1,121 @@
+# Default values for rabbitmq.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+nameOverride: ""
+fullnameOverride: ""
+
+statefulset: true
+
+rabbitmqUsername: guest
+# rabbitmqPassword:
+
+managementUsername: management
+# managementPassword:
+
+podManagementPolicy: OrderedReady
+
+updateStrategy: OnDelete
+
+replicaCount: 3
+
+image:
+  repository: rabbitmq
+  tag: 3.7-alpine
+  pullPolicy: IfNotPresent
+
+rabbitmqVhost: /
+
+rabbitmq_config: {}
+
+plugins: []
+
+amqpPort: 5672
+
+managerPort: 15672
+
+service:
+  type: ClusterIP
+  port: 5672
+
+ingress:
+  enabled: false
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  paths: []
+  hosts:
+    - my-rabbit.local
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - my-rabbit.local
+
+resources: {}
+  # limits:
+  #  cpu: 100m
+  #  memory: 1Gi
+  # requests:
+  #  cpu: 100m
+  #  memory: 1Gi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+definitions:
+  users: []
+#    - name: myUsername
+#      password: somepass
+#      tags: administrator
+  vhosts: []
+#    - name: /rabbit
+  parameters: []
+#    - vhost: /
+#      component: shovel
+#      name: test
+#      value:
+#        src-uri: amqp://localhost
+#        src-queue: source
+#        dest-uri: amqp://localhost
+#        dest-queue: destination
+#        add-forward-headers: fals
+#        ack-mode: on-confirm
+#        delete-after: never
+  permissions: []
+#    - user: myUsername
+#      vhost: /rabbit
+#      configure: .*
+#      write: .*
+#      read: .*
+  queues: []
+#    - name: myName
+#      vhost: /rabbit
+#      durable: true
+#      auto_delete: false
+#      arguments: {}
+  exchanges: []
+#    - name: myName
+#      vhost: /rabbit
+#      type: direct
+#      durable: true
+#      auto_delete: false
+#      internal: false
+#      arguments: {}
+  bindings: []
+#    - source: myName
+#      vhost: /rabbit
+#      destination: myName
+#      destination_type: queue
+#      routing_key: myKey
+#      arguments: {}
+  policies: []
+#    - name: ha-all
+#      pattern: .*
+#      vhost: /
+#      definition:
+#        ha-mode: all
+#        ha-sync-mode: automatic
+#        ha-sync-batch-size: 1

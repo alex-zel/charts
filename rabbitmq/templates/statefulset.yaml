@@ -1,0 +1,104 @@
+{{- if .Values.statefulset }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "rabbitmq.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "rabbitmq.name" . }}
+    helm.sh/chart: {{ include "rabbitmq.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  podManagementPolicy: {{ .Values.podManagementPolicy }}
+  serviceName: {{ include "rabbitmq.fullname" . }}
+  replicas: {{ .Values.replicaCount }}
+  updateStrategy:
+    type: {{ .Values.updateStrategy }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "rabbitmq.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "rabbitmq.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      serviceAccountName: {{ include "rabbitmq.fullname" . }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "rabbitmq.fullname" . }}
+        - name: definitions
+          secret:
+            secretName: {{ include "rabbitmq.fullname" . }}
+            items:
+              - key: definitions.json
+                path: definitions.json
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          volumeMounts:
+            - mountPath: /etc/rabbitmq/rabbitmq.conf
+              name: config
+              subPath: rabbitmq.conf
+            - mountPath: /etc/rabbitmq/enabled_plugins
+              name: config
+              subPath: plugins
+            - mountPath: /etc/definitions/definitions.json
+              name: definitions
+              subPath: definitions.json
+          env:
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: RABBITMQ_USE_LONGNAME
+              value: "true"
+            - name: RABBITMQ_NODENAME
+              value: "rabbit@$(MY_POD_NAME).{{ include "rabbitmq.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local"
+            - name: K8S_SERVICE_NAME
+              value: {{ include "rabbitmq.fullname" . }}
+            - name: RABBITMQ_ERLANG_COOKIE
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "rabbitmq.fullname" . }}
+                  key: rabbitmq-erlang-cookie
+          ports:
+            - name: epmd
+              protocol: TCP
+              containerPort: 4369
+            - name: amqp
+              protocol: TCP
+              containerPort: 5672
+            - name: http
+              protocol: TCP
+              containerPort: 15672
+          livenessProbe:
+            exec:
+              command: ["rabbitmqctl", "status"]
+            initialDelaySeconds: 60
+            periodSeconds: 60
+            timeoutSeconds: 15
+          readinessProbe:
+            exec:
+              command: ["rabbitmqctl", "status"]
+            initialDelaySeconds: 20
+            periodSeconds: 60
+            timeoutSeconds: 10
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+{{- end }}
